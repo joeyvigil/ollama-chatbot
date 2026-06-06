@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { checkHealth, streamChat } from './api/chat'
+import MarkdownContent from './components/MarkdownContent'
+import ThinkingDots from './components/ThinkingDots'
 import './App.css'
 
 const SYSTEM_PROMPT = {
@@ -100,17 +102,33 @@ function App() {
           </div>
         )}
 
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`message ${message.role === 'user' ? 'user' : 'assistant'}`}
-          >
-            <span className="role">
-              {message.role === 'user' ? 'You' : 'Assistant'}
-            </span>
-            <div className="bubble">{message.content || '...'}</div>
-          </div>
-        ))}
+        {messages.map((message, index) => {
+          const isThinking =
+            loading &&
+            index === messages.length - 1 &&
+            message.role === 'assistant' &&
+            !message.content
+
+          return (
+            <div
+              key={index}
+              className={`message ${message.role === 'user' ? 'user' : 'assistant'}`}
+            >
+              <span className="role">
+                {message.role === 'user' ? 'You' : 'Assistant'}
+              </span>
+              <div className="bubble">
+                {isThinking ? (
+                  <ThinkingDots />
+                ) : message.role === 'assistant' ? (
+                  <MarkdownContent content={message.content} />
+                ) : (
+                  message.content
+                )}
+              </div>
+            </div>
+          )
+        })}
         <div ref={messagesEndRef} />
       </main>
 
@@ -131,7 +149,13 @@ function App() {
           }}
         />
         <button type="submit" disabled={loading || !input.trim()}>
-          {loading ? 'Thinking...' : 'Send'}
+          {loading ? (
+            <span className="send-thinking">
+              Thinking <ThinkingDots />
+            </span>
+          ) : (
+            'Send'
+          )}
         </button>
       </form>
     </div>
