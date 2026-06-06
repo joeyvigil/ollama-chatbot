@@ -69,3 +69,7 @@ ollama-chatbot/
         ├── App.jsx      # Chat UI
         └── api/chat.js  # API client
 ```
+
+
+## Cool Beans
+
