@@ -24,7 +24,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Frontend
@@ -39,6 +39,18 @@ npm run dev
 
 Open http://localhost:5173 in your browser.
 
+Other devices on your LAN can use the **Network** URL Vite prints (e.g. `http://192.168.x.x:5173`).
+
+### Public access (dev)
+
+To share the dev server on the internet without opening router ports, run a [Cloudflare Quick Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) in a third terminal (with backend and frontend already running):
+
+```bash
+docker run --rm --network host cloudflare/cloudflared:latest tunnel --no-autoupdate --url http://localhost:5173
+```
+
+The command prints a public `https://….trycloudflare.com` URL anyone can open.
+
 ## Configuration
 
 Copy `backend/.env.example` to `backend/.env` and adjust:
@@ -47,7 +59,7 @@ Copy `backend/.env.example` to `backend/.env` and adjust:
 |----------|---------|-------------|
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API URL |
 | `OLLAMA_MODEL` | `llama3.2` | Model name |
-| `CORS_ORIGINS` | `http://localhost:5173` | Allowed frontend origins |
+| `CORS_ORIGINS` | `http://localhost:5173` | Allowed frontend origins (use `*` to allow any origin) |
 
 ## API
 
@@ -89,6 +101,19 @@ Containers are set to `restart: unless-stopped`, so they may start automatically
 
 Open http://localhost:8080 on this machine. Other devices on the same network can use `http://<your-lan-ip>:8080` (find your IP with `ip -4 addr show scope global`).
 
+### Public access (Docker)
+
+To expose the app on the public internet without router port forwarding, start the optional Cloudflare tunnel:
+
+```bash
+docker compose --profile public up -d
+docker compose logs tunnel
+```
+
+Look for a line like `https://….trycloudflare.com` in the tunnel logs — that URL is reachable from anywhere. The URL changes each time the tunnel container restarts unless you configure a named Cloudflare tunnel.
+
+Alternatively, forward TCP port `8080` on your router to this machine and allow it through your firewall (`ufw allow 8080/tcp` on Ubuntu). Anyone can then use `http://<your-public-ip>:8080`.
+
 ### Stop the chatbot
 
 ```bash
@@ -103,7 +128,7 @@ Model data is kept in the `ollama_data` volume. To remove it as well: `docker co
 |----------|---------|-------------|
 | `OLLAMA_MODEL` | `llama3.2` | Model to use (must be pulled in the Ollama container) |
 | `HOST_PORT` | `8080` | Port exposed on the host |
-| `CORS_ORIGINS` | `http://localhost:8080` | Allowed origins if the API is accessed directly |
+| `CORS_ORIGINS` | `http://localhost:8080` | Allowed origins if the API is accessed directly (use `*` for any origin) |
 
 For NVIDIA GPU support, uncomment the `deploy` block under the `ollama` service in `docker-compose.yml`.
 

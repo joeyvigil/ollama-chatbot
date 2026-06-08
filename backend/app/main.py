@@ -12,10 +12,11 @@ from app.config import get_settings
 app = FastAPI(title="Ollama Chatbot API", version="1.0.0")
 
 settings = get_settings()
+_cors_origins = settings["cors_origins"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings["cors_origins"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials="*" not in _cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
